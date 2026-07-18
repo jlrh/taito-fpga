@@ -1,0 +1,82 @@
+params:
+  - { name:  RAM_OFFSET, value: "22'h10_0000" }
+  - { name: VRAM_OFFSET, value: "22'h11_0000" }
+  - { name:  PCM_OFFSET, value: "(`PCM_START-`JTFRAME_BA1_START)>>1"}
+  - { name:  SUB_OFFSET, value: "(`SUB_START-`JTFRAME_BA1_START)>>1"}
+audio:
+  rsum: 10k
+  channels:
+    # YM2151 -> YM3012 -> TC0060DCA[1] (esquemático, hoja 4-1)
+    - { name: fm,   module: jt51,   rsum: 10k,  rc: [{ r: 1rout, c: 1n   }]}
+    # opwolf lleva DOS MSM5205 (rastan lleva uno) -> TL074 -> TC0060DCA[0] (hojas 4-2/4-3)
+    - { name: pcm0, module: jt5205, rsum: 9.1k, rc: [{ r: 8.6k, c: 10n  }, { r: 10.2k, c: 68n }]}
+    - { name: pcm1, module: jt5205, rsum: 9.1k, rc: [{ r: 8.6k, c: 10n  }, { r: 10.2k, c: 68n }]}
+sdram:
+  banks:
+    - buses:
+      # work RAM del 68000 (0x100000-0x107fff, 32 KB) + VRAM del PC080SN
+      - name: ram
+        addr_width: 18
+        data_width: 16
+        cs: xram_cs
+        din: main_dout
+        rw: true
+        offset: RAM_OFFSET
+      # programa del 68000: 256 KB (b20-05-02 / b20-03-02 / b20-04 / b20-20).
+      # addr_width=19 -> main_addr[18:1] (como rastan). Con 17 memgen genera [16:1] = 128 KB: NO cabe.
+      - name: main
+        addr_width: 19
+        data_width: 16
+      - name: scr0ram
+        addr_width: 16
+        data_width: 32
+        offset: VRAM_OFFSET
+      - name: scr1ram
+        addr_width: 16
+        data_width: 32
+        offset: VRAM_OFFSET
+    - buses:
+      # Z80 de sonido: 64 KB (b20-07.10) = 4 bancos de 16 KB
+      - name: snd
+        addr_width: 16
+        data_width: 8
+      # FASE 4: Z80 SUSTITUTO DEL C-CHIP (bootleg opwolfb, opwlfb.09 = 32 KB).
+      # Su ROM es la HLE del C-Chip ya escrita. Ver research/OPWOLF-PLAN.md.
+      - name: sub
+        addr_width: 15
+        data_width: 8
+        offset: SUB_OFFSET
+      # muestras ADPCM: 512 KB (b20-08.21) COMPARTIDAS por los dos MSM5205
+      - name: pcm0
+        addr_width: 19
+        data_width: 8
+        offset: PCM_OFFSET
+      - name: pcm1
+        addr_width: 19
+        data_width: 8
+        offset: PCM_OFFSET
+    - buses:
+      # tiles del PC080SN: 512 KB (b20-13.13), 8x8 4bpp packed_msb
+      - name: scr0rom
+        addr_width: 20
+        data_width: 32
+      - name: scr1rom
+        addr_width: 20
+        data_width: 32
+    - buses:
+      # sprites del PC090OJ: 512 KB (b20-14.72), 16x16 4bpp packed_msb
+      - name: orom
+        addr_width: 20
+        data_width: 32
+bram:
+  # ROM del C-Chip REAL, 16 KB, cargada por el mecanismo PROM (JTFRAME_PROM_START) -> en runtime
+  # desde la .mra, NO horneada en el .rbf (GOTCHAS §D4).
+  # ⭐ Se mapea EN LAS MISMAS DIRECCIONES QUE VE LA CPU del uPD78C11:
+  #      0x0000-0x0FFF  ROM INTERNA (cchip_upd78c11.bin, 4 KB)
+  #      0x2000-0x3FFF  EPROM EXTERNA (b20-18.73, 8 KB)
+  #    asi el bus de la CPU es directamente rom_addr = pc[13:0]. Ver research/CCHIP-LLE-PLAN.md.
+  - name: cchip
+    addr_width: 14
+    data_width: 8
+    prom: true
+    simfile: {}

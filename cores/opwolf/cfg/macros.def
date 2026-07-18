@@ -1,0 +1,75 @@
+CORENAME=OPWOLF
+# GAMETOP lo impone memgen (mem.go concatena "jt"+core). El CORENAME va SIN jt (CONVENCION-NOMBRES.md).
+GAMETOP=jtopwolf_game_sdram
+
+# Operation Wolf (Taito, 1987) — clonado de 'rastan' (misma familia PC080SN + PC090OJ + PC060HA).
+# Relojes REALES del esquemático (research/ESQUEMATICOS-OPWOLF.md §1):
+#   XTAL1 26.68558 MHz /2 = 13.343 MHz -> vídeo (PC080SN); pixel clock = 13.343/2 = 6.6714 MHz
+#   XTAL2 16 MHz /2 = 8 MHz -> 68000 | XTAL3 12 MHz -> C-Chip
+#   sonido: 8 MHz /2 = 4 MHz -> Z80 y YM2151 | 384 kHz -> 2x MSM5205
+# 6.667MHz pixel clock (mismo PLL que rastan)
+JTFRAME_CLK24
+JTFRAME_PLL=jtframe_pll6671
+JTFRAME_WIDTH=320
+JTFRAME_HEIGHT=240
+
+JTFRAME_COLORW=5
+
+# --- Reparto de la .mra (offset de BYTE en el stream de descarga) ---
+#   ba0 = maincpu  0x00000-0x3ffff  (256 KB, 16-bit)
+#   ba1 = audiocpu 0x40000-0x4ffff  (64 KB Z80, 4 bancos de 16 KB)
+#         adpcm    0x50000-0xcffff  (512 KB, muestras de los 2 MSM5205)
+#         sub      0xd0000-0xd7fff  (32 KB, Z80 SUSTITUTO DEL C-CHIP: opwlfb.09) <- FASE 4
+#   ba2 = scr gfx  0xd8000+         (512 KB, tiles 8x8 4bpp)
+#   ba3 = obj gfx  0x158000+        (512 KB, sprites 16x16 4bpp)
+JTFRAME_BA1_START=0x40000
+PCM_START=0x50000
+SUB_START=0xd0000
+JTFRAME_BA2_START=0xd8000
+JTFRAME_BA3_START=0x158000
+# EPROM del C-Chip (b20-18.73, 8 KB) en RUNTIME desde la .mra -> .rbf distribuible (GOTCHAS §D4).
+# ⚠ Solo la usaria un LLE del uPD7811, que NO existe. En el camino elegido (bootleg) la HLE es la
+#   ROM del Z80 sustituto, que va en 'sub'. Se deja el hueco por si algun dia hay core de uPD7811.
+JTFRAME_PROM_START=0x1d8000
+
+JTFRAME_CREDITS_HSTART=32
+
+# 2 botones: disparo (gatillo) y granada
+JTFRAME_BUTTONS=2
+
+# PISTOLA OPTICA: jtframe da gun_1p_x/gun_1p_y en coordenadas de pantalla y dibuja la mira.
+JTFRAME_LIGHTGUN
+# ⚠ JTFRAME_LIGHTGUN SOLO instancia el modulo. Sin JTFRAME_LIGHTGUN_ON:
+#     jtframe_coremod.v: lightgun_en  = core_mod[1]   (bit que vendria por cabecera de la .mra)
+#     jtframe_board.v:   gun_crossh_en= status[9]     (opcion del OSD)
+#   -> la pistola queda DESACTIVADA y la MIRA NO SE DIBUJA. En un juego de pistola va SIEMPRE ON.
+#   Ver GOTCHAS §H26.
+JTFRAME_LIGHTGUN_ON
+
+# ⭐ C-CHIP REAL (LLE con upd7810.v) -> DESBLOQUEA EL SET ORIGINAL 'opwolf'.
+#   Sin este macro se compila el sustituto del BOOTLEG (Z80 + la HLE de opwlfb.09), que solo sirve
+#   para 'opwolfb' porque su 68000 esta parcheado.
+#   ⚠ SON EXCLUYENTES: un .rbf compilado con esto NO sirve para el bootleg, y viceversa.
+#     Para tener los dos sets con UN SOLO .rbf habria que instanciar ambos y elegir en RUNTIME con
+#     JTFRAME_HEADER (un byte en la cabecera de la .mra). Pendiente. Ver research/CCHIP-LLE-PLAN.md.
+OPWOLF_CCHIP78
+
+# debugging
+JTFRAME_IOCTL_RD=1024
+
+[mister]
+JTFRAME_ARX=4
+JTFRAME_ARY=3
+JTFRAME_OSD_NOLOGO
+# Build de release: desactiva los atajos de debug de jtframe (numeros al pulsar Start, coin/start+dir)
+# y el input-record. Solo en la .rbf de mister -> el sim conserva las sondas de desarrollo.
+# ✅ RESTAURADO 2026-07-16: la telemetria del gatillo YA CUMPLIO SU FUNCION (localizo la fuga del PC a
+#    0xD925 -> el bug del SLL, ver research/BEAR-VS-WOLF.md §10). Con RELEASE, jtframe NI INSTANCIA
+#    jtframe_debug (jtframe_board.v:405) y el video pasa sin overlay -> sin numeros en pantalla.
+#    La telemetria del C-Chip (dbg_* en opwolf_cchip78.v + mux en jtopwolf_game.v) SE QUEDA en el RTL:
+#    no molesta (debug_bus=0 y debug_view no se conecta), y es la herramienta que resolvio el bug.
+#    Para volver a usarla: comenta esta linea y recompila.
+JTFRAME_RELEASE
+
+[mist]
+JTFRAME_NOSTA

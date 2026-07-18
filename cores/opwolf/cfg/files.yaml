@@ -1,0 +1,41 @@
+opwolf:
+  - get:
+    - jtopwolf_game.v
+    - opwolf_main.v
+    - opwolf_video.v
+    - opwolf_colmix.v
+    - opwolf_scr.v
+    - opwolf_tilemap.v
+    - opwolf_obj.v
+    - opwolf_snd.v
+    - opwolf_pc060.v
+    # --- DELTA de sonido vs rastan (Fase 3) ---
+    - opwolf_adpcm.v    # banco de 7 regs + secuenciador de UN MSM5205 (se instancia x2)
+    - opwolf_dca.v      # TC0060DCA: LUT sigmoide del volumen digital
+    - opwolf_vol.v      # aplica ganancia de canal + maestra a una muestra
+    # --- DELTA vs rastan (research/OPWOLF-PLAN.md §0) ---
+    - opwolf_cchip.v    # protección (bootleg): Z80 sustituto + RAM compartida
+    - opwolf_cchip78.v  # protección (ORIGINAL): C-Chip REAL = uPD78C11 + SRAM 8K + regs ASIC
+    - upd7810.v         # ⭐ CORE DE CPU uPD78C11 (no existe en jtframe). research/CCHIP-LLE-PLAN.md
+    - opwolf_gun.v      # light gun: contadores H1-H9 / V1-V9 + latch (esquemáticos §5)
+jtframe:
+  - from: ram
+    get:
+      - jtframe_dual_ram.v
+      - jtframe_dual_nvram.v
+      - jtframe_dual_ram16.v
+      - jtframe_dual_nvram16.v
+      - jtframe_obj_buffer.v
+  - from: clocking
+    get:
+      - jtframe_sync.v
+  - from: video
+    get:
+      - jtframe_vtimer.v
+      - jtframe_blank.v
+  - from: cpu
+    get:
+      - jtframe_z80.yaml
+      - jtframe_m68k.yaml
+jt51:
+jt5205:
