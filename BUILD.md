@@ -11,7 +11,7 @@ distributable as-is. Tested for MiSTer.
   and its toolchain (`setprj.sh`, `jtcore`).
 - **Quartus** (the version your MiSTer board needs).
 - Your Operation Wolf **ROMs** (not included), **including the C-Chip firmware** `cchip_upd78c11.bin` —
-  see [`README.md`](README.md).
+  see [`DETAILS.md`](DETAILS.md).
 
 ## Steps
 
@@ -60,7 +60,7 @@ el `.mra`, así que el bitstream es distribuible tal cual. Probado para MiSTer.
   módulos) y su toolchain (`setprj.sh`, `jtcore`).
 - **Quartus** (la versión que pida tu placa MiSTer).
 - Tus **ROMs** de Operation Wolf (no se incluyen), **incluido el firmware del C-Chip**
-  `cchip_upd78c11.bin` — ver [`README.md`](README.md).
+  `cchip_upd78c11.bin` — ver [`DETAILS.md`](DETAILS.md).
 
 ## Pasos
 
